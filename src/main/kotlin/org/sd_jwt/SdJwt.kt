@@ -174,6 +174,39 @@ inline fun <reified T> createCredential(
     sdJwtHeader: SdJwtHeader = SdJwtHeader(),
     decoy: Boolean = true
 ): String {
+    val disclosures = mutableListOf<String>()
+    val sdJwtPayload = createSDJWTPayload(userClaims, holderPubKey, discloseStructure, disclosures, decoy)
+
+    val sdJwtEncoded = buildJWT(sdJwtPayload, issuerKey, sdJwtHeader)
+
+    return sdJwtEncoded + SEPARATOR + disclosures.joinToString(SEPARATOR)
+}
+
+
+inline fun <reified T> createCredential(
+    userClaims: T,
+    signer: StaticJWSSigner,
+    holderPubKey: JWK? = null,
+    discloseStructure: T? = null,
+    sdJwtHeader: SdJwtHeader = SdJwtHeader(),
+    decoy: Boolean = true
+): String {
+    val disclosures = mutableListOf<String>()
+    val sdJwtPayload = createSDJWTPayload(userClaims, holderPubKey, discloseStructure, disclosures, decoy)
+
+    val sdJwtEncoded = buildJWT(sdJwtPayload, signer, sdJwtHeader)
+
+    return sdJwtEncoded + SEPARATOR + disclosures.joinToString(SEPARATOR)
+}
+
+
+inline fun <reified T> createSDJWTPayload(
+    userClaims: T,
+    holderPubKey: JWK? = null,
+    discloseStructure: T? = null,
+    disclosures: MutableList<String>,
+    decoy: Boolean = true
+): JWTClaimsSet {
     val jsonUserClaims = JSONObject(Json.encodeToString(userClaims))
     val jsonDiscloseStructure = if (discloseStructure != null) {
         JSONObject(Json.encodeToString(discloseStructure))
@@ -181,7 +214,6 @@ inline fun <reified T> createCredential(
         JSONObject()
     }
 
-    val disclosures = mutableListOf<String>()
     val sdClaimsSet = createSdClaims(jsonUserClaims, jsonDiscloseStructure, disclosures, decoy) as JSONObject
 
     val sdJwtPayload = JWTClaimsSet.Builder()
@@ -205,9 +237,7 @@ inline fun <reified T> createCredential(
         )
     }
 
-    val sdJwtEncoded = buildJWT(sdJwtPayload.build(), issuerKey, sdJwtHeader)
-
-    return sdJwtEncoded + SEPARATOR + disclosures.joinToString(SEPARATOR)
+    return sdJwtPayload.build()
 }
 
 
@@ -413,9 +443,34 @@ fun buildJWT(claims: JWTClaimsSet, key: JWK?, sdJwtHeader: SdJwtHeader = SdJwtHe
         header.contentType(sdJwtHeader.cty)
     }
 
-    val signedSdJwt = SignedJWT(header.build(), claims)
-    signedSdJwt.sign(signer)
-    return signedSdJwt.serialize()
+    return signAndSerializeJWT(header.build(), claims, signer)
+}
+
+/**
+ * @suppress
+ * This method is not for API users.
+ */
+fun buildJWT(claims: JWTClaimsSet, signer: StaticJWSSigner, sdJwtHeader: SdJwtHeader = SdJwtHeader()): String {
+    val header = JWSHeader.Builder(signer.getAlgorithm()).keyID(signer.getKeyId())
+
+    if (sdJwtHeader.type != null) {
+        header.type(sdJwtHeader.type)
+    }
+    if (sdJwtHeader.cty != null) {
+        header.contentType(sdJwtHeader.cty)
+    }
+
+    return signAndSerializeJWT(header.build(), claims, signer)
+}
+
+/**
+ * @suppress
+ * This method is not for API users.
+ */
+private fun signAndSerializeJWT(header: JWSHeader, claims: JWTClaimsSet, signer: JWSSigner): String {
+    val signedJwt = SignedJWT(header, claims)
+    signedJwt.sign(signer)
+    return signedJwt.serialize()
 }
 
 /**
