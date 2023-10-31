@@ -2,7 +2,7 @@
 
 This is a Kotlin implementation of the [Selective Disclosure for JWTs](https://github.com/oauthstuff/draft-selective-disclosure-jwt)
 spec using the [Nimbus JOSE + JWT](https://connect2id.com/products/nimbus-jose-jwt) 
-library.
+library..
 
 Up to date with draft version: [**04**](https://drafts.oauth.net/oauth-selective-disclosure-jwt/draft-ietf-oauth-selective-disclosure-jwt.html)
 
