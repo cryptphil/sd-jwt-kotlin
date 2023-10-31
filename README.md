@@ -10,7 +10,7 @@ Up to date with draft version: [**04**](https://drafts.oauth.net/oauth-selective
 
 In the [Debugging.kt](src/test/kotlin/org/sd_jwt/Debugging.kt) file 
 there are examples that show how the library can be used
-on the issuance, wallet and verifier side..
+on the issuance, wallet and verifier side...
 
 ### Running the Examples
 
